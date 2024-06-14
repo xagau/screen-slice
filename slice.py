@@ -60,22 +60,6 @@ def analyse(image_path, prompt, api_key):
         # Extract the response content from the first message
         val = response['choices'][0]['message']['content']
         return val
-        '''
-        print("Start")
-        # Request completion from OpenAI
-        response = openai.Completion.create(
-            engine="gpt-4o",
-            prompt=combined_prompt,
-            max_tokens=128000
-        )
-        print("End A")
-        print(response)
-        # Extract the response content from the first message
-        val = response['choices'][0]['message']['content']
-        print("End B")
-        #val = response['choices'][0]['text']
-        return val
-        '''
 
     except Exception as e:
         print(f"Could not get a response for: {image_path}. Error: {e}")
@@ -121,8 +105,7 @@ async def draw_bounding_boxes(image, contours):
             x_square = max(0, x_center - square_size // 2)
             y_square = max(0, y_center - square_size // 2)
 
-            #change this to filter out what you don't want
-            MAX = 18
+            MAX = 20
             if(w > MAX and h > MAX):
                 # Ensure the square size is valid for resizing
                 if square_size > 0 and x_square + square_size <= image.shape[1] and y_square + square_size <= image.shape[0]:
@@ -148,18 +131,30 @@ async def draw_bounding_boxes(image, contours):
             try:
                 if( not contains_text(roi,count)):
                     save_image(roi, image_path)
-
-                    prompt = "You are going to be given screen shot images from a OS desktop application or website. The image will be a small subsection of a screenshot. You are going to try to identify the image. You are looking in particular for Icons, Buttons and graphical call to action items. Please look at the provided image and select the most appropriate label that describes the image. The image may contain a single icon that represents a common function typically seen in web browsers or applications. Make up the label that best matches the image depicted. Make sure your response is a single word. If you're unsure just respond with 'Not Available'"
+                    #hint = os.name()
+                    prompt = "Lets Play a Game: Computer Vision, Mission Critical. You are going to be given image snippets from a desktop. Goal: select a name for each snippet. Make sure your response is a single word. If you're unsure just respond with 'Not Available'."
 
                     val = analyse(image_path, prompt, api_key)
                     try:
+                        position = ((x_square+square_size+10), y_square+20)  # Coordinates (x, y) of the text starting point
+
+                        # Choose the font type and scale
+                        font = cv2.FONT_HERSHEY_SIMPLEX
+                        font_scale = 0.5
+
+                        # Choose the font and text color
+                        font_color = (0, 255, 0)  # BGR format (Blue, Green, Red)
+
+                        # Draw the text on the image
+                        cv2.putText(image, val, position, font, font_scale, font_color, thickness=2)
+
                         #if val != 'Not Available':
                         print("Response: " + str(val) + " " + image_path)
-                    except:
-                        print("ERROR@")
+                    except Exception as ee:
+                        print(f"Loop exception. EE-> Error: {ee}")
                         pass
-            except:
-                print("Loop error")
+            except Exception as e:
+                print(f"Loop exception. Error: {e}")
                 pass
 
 # Main function to capture, detect, and draw bounding boxes
@@ -174,7 +169,7 @@ def main():
     asyncio.run(draw_bounding_boxes(screen_image, contours))
 
     # Display the image with bounding boxes
-    cv2.imshow('XX Bounding Boxes', screen_image)
+    cv2.imshow('Icon and Button Detection', screen_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
